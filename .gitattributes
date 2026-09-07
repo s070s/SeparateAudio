@@ -1,0 +1,10 @@
+# Normalise text in the repo, check out native on each platform.
+* text=auto
+
+# Batch files MUST keep CRLF. Windows cmd.exe can misparse labels and goto
+# targets in a .bat file that has LF-only endings, so pin them explicitly.
+*.bat text eol=crlf
+
+# Python and docs are fine as LF.
+*.py text eol=lf
+*.md text eol=lf

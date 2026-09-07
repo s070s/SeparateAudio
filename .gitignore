@@ -1,0 +1,35 @@
+# ---------------------------------------------------------------------
+# Your audio never leaves this machine. Input tracks and separated stems
+# are yours, are often copyrighted, and are far too large for a git repo.
+# ---------------------------------------------------------------------
+Input/
+Output/
+
+# Run logs record absolute paths, GPU model and machine details.
+Logs/
+
+# Machine-specific: absolute paths and remembered window geometry.
+# The app recreates it from defaults on first run.
+config.json
+
+# Temporary separation workspace (created inside the output folder).
+.separateaudio_work/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Installers and archives
+*.exe
+*.zip
+
+# Editor / OS noise
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
