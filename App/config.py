@@ -67,8 +67,39 @@ STANDARD_STEMS = ("vocals", "drums", "bass", "other")
 SIX_STEMS = ("vocals", "drums", "bass", "other", "guitar", "piano")
 
 
-def expected_stems(model):
-    """Return the stem names a given model is expected to produce."""
+def two_stems_target(extra_args):
+    """Return the stem named by a ``--two-stems`` argument, or ``None``.
+
+    Demucs accepts both ``--two-stems vocals`` and ``--two-stems=vocals`` and,
+    being plain argparse, lets the last one win when it is repeated. Values are
+    lower-cased because Demucs matches them against the model's own source
+    names, which are always lower case.
+    """
+    if not extra_args:
+        return None
+
+    found = None
+    arguments = list(extra_args)
+    for position, argument in enumerate(arguments):
+        if argument == "--two-stems":
+            if position + 1 < len(arguments):
+                found = arguments[position + 1].strip().lower() or found
+        elif argument.startswith("--two-stems="):
+            found = argument.split("=", 1)[1].strip().lower() or found
+    return found
+
+
+def expected_stems(model, extra_args=None):
+    """Return the stem names a given model is expected to produce.
+
+    ``--two-stems=vocals`` makes Demucs emit ``vocals`` and ``no_vocals``
+    instead of the model's full set, so the expected list has to follow it.
+    Without this the run produces perfectly good audio and is then reported as
+    failed for "missing" the stems that were never going to be written.
+    """
+    target = two_stems_target(extra_args)
+    if target:
+        return (target, "no_%s" % target)
     return SIX_STEMS if model in SIX_STEM_MODELS else STANDARD_STEMS
 
 

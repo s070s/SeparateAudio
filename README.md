@@ -477,12 +477,23 @@ Arguments that would change the output format or location (`--mp3`, `--flac`,
 stems are always WAV, always in the song's own folder. Anything else, such as
 `--shifts`, is passed straight through.
 
-One caveat: **`--two-stems` is passed through but the run will still be reported
-as failed.** The app decides which stems to expect from the model name alone, so
-it looks for `vocals`, `drums`, `bass` and `other`, finds only the two that
-`--two-stems` produced, and calls the output incomplete. The stems themselves are
-written correctly — only the status is wrong. Do not use `--two-stems` until the
-expected-stem list accounts for it.
+**`--two-stems` is fully supported.** Demucs splits the track into one named
+stem and everything else, so
+
+```json
+"extra_demucs_args": ["--two-stems=vocals"]
+```
+
+produces `vocals.wav` and `no_vocals.wav` — a karaoke split — instead of the
+usual four files. Any of the model's own stem names works: `drums` gives
+`drums.wav` and `no_drums.wav`, and so on. Both `--two-stems=vocals` and
+`--two-stems vocals` are accepted.
+
+The app adjusts what it expects to find so a two-stem run is verified against
+the two files it will actually write. It also halves the disk-space estimate,
+since only two stems are produced. Runtime is unchanged: Demucs still runs the
+model in full and merges the other sources afterwards, so a four-pass bag like
+`htdemucs_ft` still takes four passes.
 
 `device` accepts `auto`, `cpu` or `cuda`. `overwrite_policy` accepts `prompt`,
 `skip`, `overwrite` or `rename`. If the file is corrupt or a value is invalid,

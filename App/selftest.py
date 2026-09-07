@@ -305,6 +305,52 @@ def test_config(tmp):
     check("htdemucs is a single pass", config_mod.expected_passes("htdemucs") == 1)
 
 
+def test_two_stems():
+    section("Two-stem runs")
+
+    check("no extra arguments means no two-stem target",
+          config_mod.two_stems_target([]) is None)
+    check("unrelated arguments are ignored",
+          config_mod.two_stems_target(["--shifts", "2"]) is None)
+    check("the separated form is read",
+          config_mod.two_stems_target(["--two-stems", "vocals"]) == "vocals")
+    check("the --flag=value form is read",
+          config_mod.two_stems_target(["--two-stems=drums"]) == "drums")
+    check("the value is lower-cased to match Demucs' source names",
+          config_mod.two_stems_target(["--two-stems=Vocals"]) == "vocals")
+    check("a repeated flag takes the last one, as argparse does",
+          config_mod.two_stems_target(
+              ["--two-stems=vocals", "--two-stems", "bass"]) == "bass")
+    check("a trailing --two-stems with no value is not a target",
+          config_mod.two_stems_target(["--shifts", "1", "--two-stems"]) is None)
+    check("an empty value is not a target",
+          config_mod.two_stems_target(["--two-stems="]) is None)
+
+    # The bug: expectations came from the model name alone, so a two-stem run
+    # wrote correct audio and was then reported as FAILED for "missing" the
+    # stems it was explicitly told not to produce.
+    check("a two-stem run expects exactly its two stems",
+          config_mod.expected_stems("htdemucs_ft", ["--two-stems", "vocals"])
+          == ("vocals", "no_vocals"))
+    check("the complement name follows Demucs' no_<stem> convention",
+          config_mod.expected_stems("htdemucs_ft", ["--two-stems=bass"])
+          == ("bass", "no_bass"))
+    check("two-stem overrides a six-stem model too",
+          config_mod.expected_stems("htdemucs_6s", ["--two-stems=piano"])
+          == ("piano", "no_piano"))
+    check("without the flag the model still decides",
+          config_mod.expected_stems("htdemucs_ft", ["--shifts", "2"])
+          == ("vocals", "drums", "bass", "other"))
+    check("the old single-argument call still works",
+          config_mod.expected_stems("htdemucs_ft") == ("vocals", "drums", "bass", "other"))
+
+    # verify_stems lower-cases what it finds on disk, so an upper-case target
+    # must not produce an expectation that can never match.
+    stems = config_mod.expected_stems("htdemucs_ft", ["--two-stems=VOCALS"])
+    check("expectations stay lower case so verification can match",
+          all(s == s.lower() for s in stems), str(stems))
+
+
 def test_progress():
     section("Progress maths")
     state = processor._ProgressState(4)
@@ -489,6 +535,31 @@ def test_command_building(tmp):
           request.expected_stems == ("vocals", "drums", "bass", "other"))
     check("knows htdemucs_ft runs four passes", request.expected_passes == 4)
 
+    # A two-stem run must carry through to what the worker verifies, or the
+    # separation succeeds and is then reported as a failure.
+    two_cfg = config_mod.default_config()
+    two_cfg["output_dir"] = tmp
+    two_cfg["extra_demucs_args"] = ["--two-stems", "vocals"]
+    two = processor.JobRequest(["C:\\In\\A Song.mp3"], two_cfg, _Report(), None)
+    check("a two-stem job expects two stems",
+          two.expected_stems == ("vocals", "no_vocals"), str(two.expected_stems))
+    check("the flag still reaches the command line",
+          "--two-stems" in two.extra_args, str(two.extra_args))
+    worker_two = processor.SeparationWorker(two, queue.Queue())
+    built = worker_two._build_command("C:\\In\\A Song.mp3", os.path.join(tmp, "work"))
+    check("--two-stems is passed to Demucs", "--two-stems" in built, " ".join(built))
+    check("two-stem runs still bag four passes", two.expected_passes == 4)
+
+    # Dropped arguments must not count: they never reach Demucs.
+    dropped_cfg = config_mod.default_config()
+    dropped_cfg["output_dir"] = tmp
+    dropped_cfg["extra_demucs_args"] = ["--mp3", "--two-stems", "vocals"]
+    dropped_request = processor.JobRequest(
+        ["C:\\In\\A Song.mp3"], dropped_cfg, _Report(), None)
+    check("a surviving --two-stems still counts even beside a dropped flag",
+          dropped_request.expected_stems == ("vocals", "no_vocals"),
+          str(dropped_request.expected_stems))
+
 
 def test_extra_args_guard():
     section("Extra Demucs arguments")
@@ -664,6 +735,7 @@ def main():
         test_verify(tmp)
         test_validate(tmp)
         test_config(os.path.join(tmp, "cfg"))
+        test_two_stems()
         test_progress()
         test_percent_parsing()
         test_failure_messages()

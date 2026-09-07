@@ -99,7 +99,9 @@ class JobRequest(object):
         self.env_python = report.env_python
         self.env_dir = report.env_dir
         self.demucs_entry = report.demucs_entry or "demucs.separate"
-        self.expected_stems = config_mod.expected_stems(cfg["model"])
+        # Derived from the arguments that survived filtering, since those are
+        # the only ones Demucs will actually see.
+        self.expected_stems = config_mod.expected_stems(cfg["model"], self.extra_args)
         self.expected_passes = config_mod.expected_passes(cfg["model"])
         self.logger = logger
 
