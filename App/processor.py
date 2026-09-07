@@ -13,6 +13,7 @@ import subprocess
 import threading
 import time
 import traceback
+import uuid
 
 from App import audiofiles, config as config_mod, paths, procutil
 
@@ -133,6 +134,12 @@ class SeparationWorker(threading.Thread):
         self._process = None
         self._process_lock = threading.Lock()
         self._policy_for_all = None
+        #: Unique per worker, so a later batch can never be handed the scratch
+        #: folder of an earlier one. The process id alone was not enough: it is
+        #: constant for the whole session while ``index`` restarts at 0 on every
+        #: Start, so pressing Start again reused - and erased - a workspace that
+        #: a failed run had deliberately left stems in.
+        self._run_token = uuid.uuid4().hex[:8]
         #: Output folders already spoken for by earlier files in this batch,
         #: so two inputs can never write into the same folder.
         self._claimed_dirs = set()
@@ -276,10 +283,12 @@ class SeparationWorker(threading.Thread):
         # Kept short on purpose: Demucs appends <model>\<full track name>\ to
         # this path, so a long workspace name could push the stems past the
         # 260-character limit even when the final destination is well within it.
-        # The PID keeps two copies of the app running against the same output
-        # folder from stepping on each other's workspace.
+        # The per-worker token keeps two copies of the app - and two batches in
+        # the same copy - from stepping on each other's workspace. It must stay
+        # unique across batches: this folder is rmtree'd below, and a failed run
+        # may have left the user's only copy of some stems in it.
         work_root = paths.work_dir_for(self.request.output_dir)
-        work_dir = os.path.join(work_root, "w%d_%d" % (os.getpid(), index))
+        work_dir = os.path.join(work_root, "w%s_%d" % (self._run_token, index))
         try:
             shutil.rmtree(work_dir, ignore_errors=True)
             os.makedirs(work_dir, exist_ok=True)

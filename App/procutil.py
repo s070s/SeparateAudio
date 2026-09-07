@@ -196,6 +196,3 @@ def open_in_explorer(path, logger=None):
             logger.error("Could not open folder %s: %s", path, exc)
         return False
 
-
-#: Backwards-compatible private alias.
-_decode = decode_bytes

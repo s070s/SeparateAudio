@@ -50,8 +50,8 @@ The setup performed on this machine:
 
 | Component | Version / detail | Location |
 |---|---|---|
-| Miniconda | conda 26.7.1, installed "Just Me", silently, **not** added to `PATH` | `C:\Users\GS\miniconda3` |
-| Conda environment | `separateaudio` (isolated) | `C:\Users\GS\miniconda3\envs\separateaudio` |
+| Miniconda | conda 26.7.1, installed "Just Me", silently, **not** added to `PATH` | `%USERPROFILE%\miniconda3` |
+| Conda environment | `separateaudio` (isolated) | `%USERPROFILE%\miniconda3\envs\separateaudio` |
 | Python | 3.11.16 | inside the environment |
 | PyTorch | 2.5.1 (CUDA 12.4 build) | inside the environment |
 | torchaudio | 2.5.1 | inside the environment |
@@ -114,7 +114,7 @@ Nothing in the app is tied to this machine. Install Conda on the new PC, copy th
 All paths are worked out from wherever `App\` actually sits, so the folder can
 live on any drive at any depth.
 
-> The concrete paths shown elsewhere in this README (`C:\Users\GS\...`) are this
+> The concrete paths shown elsewhere in this README (`%USERPROFILE%\...`) are this
 > machine's. On another PC, substitute wherever you put the folder and wherever
 > Conda installed itself — you never have to edit anything to make that work.
 
@@ -217,7 +217,7 @@ produce: uncompressed WAV runs about **42 MB per minute of audio** for four
 stems.
 
 You can reclaim the 1.2 GB package cache at any time with
-`C:\Users\GS\miniconda3\Scripts\conda.exe clean --all`. It only holds installer
+`%USERPROFILE%\miniconda3\Scripts\conda.exe clean --all`. It only holds installer
 archives; removing them does not affect the environment, though it does mean a
 future reinstall re-downloads instead of unpacking locally.
 
@@ -282,7 +282,7 @@ processing is actually possible.
 Double-click:
 
 ```
-C:\Users\GS\Desktop\SeparateAudio\launch.bat
+%USERPROFILE%\Desktop\SeparateAudio\launch.bat
 ```
 
 `launch.bat` finds the `separateaudio` environment on its own — you never need to
@@ -294,18 +294,18 @@ elsewhere.
 To start it from a terminal instead:
 
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe C:\Users\GS\Desktop\SeparateAudio\App\main.py
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe %USERPROFILE%\Desktop\SeparateAudio\App\main.py
 ```
 
 ---
 
 ## Normal workflow
 
-1. Put audio files in `C:\Users\GS\Desktop\SeparateAudio\Input`.
+1. Put audio files in `%USERPROFILE%\Desktop\SeparateAudio\Input`.
 2. Run `launch.bat`.
 3. Wait for **Environment** at the bottom to turn green and read *Ready*.
 4. Select files in the list, or just press **Start All**.
-5. Collect the stems from `C:\Users\GS\Desktop\SeparateAudio\Output`.
+5. Collect the stems from `%USERPROFILE%\Desktop\SeparateAudio\Output`.
 
 Press **Refresh** if you add files while the app is already open.
 
@@ -315,10 +315,10 @@ Press **Refresh** if you add files while the app is already open.
 
 | Purpose | Path |
 |---|---|
-| Input | `C:\Users\GS\Desktop\SeparateAudio\Input` |
-| Output | `C:\Users\GS\Desktop\SeparateAudio\Output` |
-| Logs | `C:\Users\GS\Desktop\SeparateAudio\Logs` |
-| Source code | `C:\Users\GS\Desktop\SeparateAudio\App` |
+| Input | `%USERPROFILE%\Desktop\SeparateAudio\Input` |
+| Output | `%USERPROFILE%\Desktop\SeparateAudio\Output` |
+| Logs | `%USERPROFILE%\Desktop\SeparateAudio\Logs` |
+| Source code | `%USERPROFILE%\Desktop\SeparateAudio\App` |
 
 All four are created automatically if missing. You can point Input and Output
 somewhere else with the **Browse...** buttons; the choice is remembered.
@@ -447,12 +447,12 @@ during a run offers the same clean cancellation.
 
 ## Configuration
 
-`C:\Users\GS\Desktop\SeparateAudio\config.json`
+`%USERPROFILE%\Desktop\SeparateAudio\config.json`
 
 ```json
 {
-  "input_dir": "C:\\Users\\GS\\Desktop\\SeparateAudio\\Input",
-  "output_dir": "C:\\Users\\GS\\Desktop\\SeparateAudio\\Output",
+  "input_dir": "%USERPROFILE%\\Desktop\\SeparateAudio\\Input",
+  "output_dir": "%USERPROFILE%\\Desktop\\SeparateAudio\\Output",
   "model": "htdemucs_ft",
   "device": "auto",
   "overwrite_policy": "prompt"
@@ -496,7 +496,7 @@ carries on with defaults — a bad config can never stop the app from starting.
 One log file per launch:
 
 ```
-C:\Users\GS\Desktop\SeparateAudio\Logs\separateaudio_YYYYMMDD_HHMMSS.log
+%USERPROFILE%\Desktop\SeparateAudio\Logs\separateaudio_YYYYMMDD_HHMMSS.log
 ```
 
 Each records startup, the full environment check (Python, Demucs, PyTorch,
@@ -528,7 +528,7 @@ Run `setup_env.bat`. It is safe to re-run at any time.
 
 **"FFmpeg was not found"**
 ```bat
-C:\Users\GS\miniconda3\Scripts\conda.exe install -n separateaudio -y --override-channels -c conda-forge ffmpeg
+%USERPROFILE%\miniconda3\Scripts\conda.exe install -n separateaudio -y --override-channels -c conda-forge ffmpeg
 ```
 
 **The first run stalls at 0%**
@@ -543,7 +543,7 @@ Set **Device** to CPU and try again, or use the lighter `htdemucs` model. An
 **A file fails with "corrupt or unsupported encoding"**
 Check it plays in a media player. Converting it to WAV first usually fixes it:
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\Library\bin\ffmpeg.exe -i "broken.m4a" "fixed.wav"
+%USERPROFILE%\miniconda3\envs\separateaudio\Library\bin\ffmpeg.exe -i "broken.m4a" "fixed.wav"
 ```
 
 **"Not enough free disk space"**
@@ -557,12 +557,12 @@ roughly a 4x speed-up at a small quality cost.
 **The app will not start at all**
 Run it from a terminal to see the error:
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe C:\Users\GS\Desktop\SeparateAudio\App\main.py
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe %USERPROFILE%\Desktop\SeparateAudio\App\main.py
 ```
 
 **Checking the app's own logic**
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe -m App.selftest
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe -m App.selftest
 ```
 Run it from the project folder. It exercises naming, scanning, output
 resolution, verification, config handling, argument filtering, logging
@@ -571,7 +571,7 @@ in about a second.
 
 **Checking the environment from a terminal**
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe -I App\_probe.py htdemucs_ft
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe -I App\_probe.py htdemucs_ft
 ```
 Prints a JSON report of Python, Demucs, PyTorch, CUDA, FFmpeg and model-cache
 status, and exits non-zero if anything essential is missing.
@@ -586,7 +586,7 @@ missing.
 To start completely fresh:
 
 ```bat
-C:\Users\GS\miniconda3\Scripts\conda.exe env remove -n separateaudio -y
+%USERPROFILE%\miniconda3\Scripts\conda.exe env remove -n separateaudio -y
 ```
 
 then run `setup_env.bat` again. This removes only the `separateaudio`
@@ -596,8 +596,8 @@ untouched.
 To upgrade or repair individual pieces:
 
 ```bat
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe -m pip install --force-reinstall demucs==4.0.1
-C:\Users\GS\miniconda3\envs\separateaudio\python.exe -m pip install --force-reinstall torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe -m pip install --force-reinstall demucs==4.0.1
+%USERPROFILE%\miniconda3\envs\separateaudio\python.exe -m pip install --force-reinstall torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 ```
 
 Use `.../whl/cpu` instead of `.../whl/cu124` on a machine without an NVIDIA GPU.
@@ -607,7 +607,7 @@ Use `.../whl/cpu` instead of `.../whl/cu124` on a machine without an NVIDIA GPU.
 ## Project layout
 
 ```
-C:\Users\GS\Desktop\SeparateAudio\
+%USERPROFILE%\Desktop\SeparateAudio\
 ├── App\                  application source
 │   ├── main.py           entry point
 │   ├── gui.py            Tkinter interface

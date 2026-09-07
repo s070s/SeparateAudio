@@ -43,6 +43,15 @@ rem -- 2. Create the environment ----------------------------------------
 if defined ENV_DIR (
     echo [2/6] Environment "%ENV_NAME%" already exists at "%ENV_DIR%" - reusing it.
 ) else (
+    if defined FOREIGN_ENV (
+        echo.
+        echo       NOTE: an environment named "%ENV_NAME%" is already registered at
+        echo             "!FOREIGN_ENV!"
+        echo             It does not belong to this Conda installation, so it is NOT
+        echo             being reused and NOT being modified. A separate environment
+        echo             will be created for SeparateAudio instead.
+        echo.
+    )
     echo [2/6] Creating environment "%ENV_NAME%" with Python %PY_VERSION% ...
     rem conda-forge only: it needs no Terms-of-Service acceptance and carries no
     rem commercial-use restrictions, unlike the Anaconda default channels.
@@ -56,8 +65,9 @@ if defined ENV_DIR (
     )
     rem A conda installed for all users puts new environments under
     rem %USERPROFILE%\.conda\envs, not under the installation root, so the
-    rem location has to be looked up rather than assumed.
-    call :resolve_env
+    rem location has to be looked up rather than assumed. "any" is safe here:
+    rem whatever we find now is the environment conda just created for us.
+    call :resolve_env any
 )
 
 if not defined ENV_DIR (
@@ -155,7 +165,19 @@ exit /b 0
 rem ---------------------------------------------------------------------
 :resolve_env
 rem Locate the environment wherever conda actually put it.
+rem
+rem   call :resolve_env       strict - only adopt an environment belonging to
+rem                           this Conda installation or this user's .conda
+rem                           folder. Anything else is recorded in FOREIGN_ENV
+rem                           and left alone.
+rem   call :resolve_env any   also accept one registered elsewhere. Only safe
+rem                           after we have just created it ourselves.
+rem
+rem environments.txt is machine-wide and matched on the folder name only, so
+rem without the strict mode an unrelated env that happens to be called
+rem "separateaudio" would be adopted and then force-installed into.
 set "ENV_DIR="
+set "FOREIGN_ENV="
 if exist "%CONDA_ROOT%\envs\%ENV_NAME%\python.exe" (
     set "ENV_DIR=%CONDA_ROOT%\envs\%ENV_NAME%"
     exit /b 0
@@ -169,8 +191,19 @@ if exist "%USERPROFILE%\.conda\environments.txt" (
         if exist "%%L\python.exe" (
             for %%N in ("%%L") do (
                 if /i "%%~nxN"=="%ENV_NAME%" (
-                    set "ENV_DIR=%%L"
-                    exit /b 0
+                    set "_P=%%L"
+                    set "_OURS="
+                    if /i not "!_P:%CONDA_ROOT%=!"=="!_P!" set "_OURS=1"
+                    if /i not "!_P:%USERPROFILE%\.conda=!"=="!_P!" set "_OURS=1"
+                    if defined _OURS (
+                        set "ENV_DIR=%%L"
+                        exit /b 0
+                    )
+                    if /i "%~1"=="any" (
+                        set "ENV_DIR=%%L"
+                        exit /b 0
+                    )
+                    if not defined FOREIGN_ENV set "FOREIGN_ENV=%%L"
                 )
             )
         )

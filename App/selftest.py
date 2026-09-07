@@ -24,7 +24,9 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from App import audiofiles, config as config_mod, envcheck, logging_setup, processor  # noqa: E402
+from App import (  # noqa: E402
+    audiofiles, config as config_mod, envcheck, logging_setup, paths, processor,
+)
 
 _RESULTS = []
 
@@ -511,6 +513,51 @@ def test_extra_args_guard():
     check("an empty list stays empty", kept3 == [] and dropped3 == [])
 
 
+def test_workspace_isolation(tmp):
+    section("Workspace isolation")
+
+    class _Report(object):
+        env_python = os.path.join(tmp, "python.exe")
+        env_dir = tmp
+        demucs_entry = "demucs.separate"
+        cuda_available = False
+
+        def resolve_device(self, requested):
+            return "cpu"
+
+    cfg = config_mod.default_config()
+    cfg["output_dir"] = tmp
+
+    def make_worker():
+        request = processor.JobRequest(["C:\\In\\A Song.mp3"], cfg, _Report(), None)
+        return processor.SeparationWorker(request, queue.Queue())
+
+    # Two batches in one session: same process, and index restarts at 0 for
+    # each. The scratch folder is rmtree'd on creation, and a failed run may
+    # have deliberately left the only copy of some stems inside it, so the
+    # second batch must never be handed the first batch's folder.
+    first, second = make_worker(), make_worker()
+    check("each worker gets its own run token",
+          first._run_token != second._run_token,
+          "%s vs %s" % (first._run_token, second._run_token))
+
+    work_root = paths.work_dir_for(tmp)
+    name_a = "w%s_%d" % (first._run_token, 0)
+    name_b = "w%s_%d" % (second._run_token, 0)
+    check("index 0 of a later batch is a different folder", name_a != name_b,
+          "%s vs %s" % (name_a, name_b))
+    check("files within one batch still get separate folders",
+          ("w%s_%d" % (first._run_token, 0)) != ("w%s_%d" % (first._run_token, 1)))
+    check("the token is hex so the folder name is path-safe",
+          all(c in "0123456789abcdef" for c in first._run_token),
+          first._run_token)
+    # Demucs appends <model>\<track name>\ inside this folder, so the name has
+    # to stay short or long track names can cross the 260-character limit.
+    check("the workspace name stays short", len(name_a) <= 16, name_a)
+    check("workspaces live under the output folder, not beside it",
+          os.path.normcase(work_root).startswith(os.path.normcase(tmp)))
+
+
 def test_logging_degrades(tmp):
     section("Logging resilience")
     os.makedirs(tmp, exist_ok=True)
@@ -625,6 +672,7 @@ def main():
         test_env_report()
         test_command_building(tmp)
         test_extra_args_guard()
+        test_workspace_isolation(tmp)
         test_logging_degrades(os.path.join(tmp, 'logging'))
         test_ui_log_filtering()
         test_queue_drain()
