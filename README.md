@@ -123,7 +123,7 @@ live on any drive at any depth.
 | Requirement | Detail |
 |---|---|
 | Windows | 10 or 11, 64-bit |
-| Free disk space | About 6.5 GB with Miniconda, 13 GB with full Anaconda (measured table below) |
+| Free disk space | About 6.3 GB with Miniconda, 12.4 GB with full Anaconda (measured table below) |
 | Internet | Once, for setup — roughly 3 GB of downloads. Afterwards the app never needs the network again |
 | Conda | Miniconda, Miniforge **or** Anaconda. Any one of them |
 | NVIDIA GPU | **Optional.** Purely for speed. Needs driver 527 or newer for the CUDA 12.4 build |
@@ -470,12 +470,19 @@ Optional extra keys:
 | `env_name` | `"separateaudio"` | Name of the Conda environment to use |
 | `keep_logs` | `30` | How many run logs to keep before the oldest are pruned |
 | `extra_demucs_args` | `[]` | Extra CLI arguments passed to Demucs, e.g. `["--shifts", "2"]` |
+| `window_geometry` | `""` | Remembered window size and position |
 
 Arguments that would change the output format or location (`--mp3`, `--flac`,
 `--mp3-bitrate`, `-o`, `--out`, `--filename`) are ignored and noted in the log:
-stems are always WAV, always in the song's own folder. Everything else, such as
-`--shifts` or `--two-stems`, is passed straight through.
-| `window_geometry` | `""` | Remembered window size and position |
+stems are always WAV, always in the song's own folder. Anything else, such as
+`--shifts`, is passed straight through.
+
+One caveat: **`--two-stems` is passed through but the run will still be reported
+as failed.** The app decides which stems to expect from the model name alone, so
+it looks for `vocals`, `drums`, `bass` and `other`, finds only the two that
+`--two-stems` produced, and calls the output incomplete. The stems themselves are
+written correctly — only the status is wrong. Do not use `--two-stems` until the
+expected-stem list accounts for it.
 
 `device` accepts `auto`, `cpu` or `cuda`. `overwrite_policy` accepts `prompt`,
 `skip`, `overwrite` or `rename`. If the file is corrupt or a value is invalid,
